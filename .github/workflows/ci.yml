@@ -1,0 +1,46 @@
+name: CI/CD Docker Compose Stack
+
+on:
+  push:
+    branches:
+      - develop    # rama que quieres analizar
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Install Docker Compose
+      run: |
+        sudo curl -L "https://github.com/docker/compose/releases/download/v2.21.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker compose version
+
+    - name: Copy .env.example to .env
+      run: cp docker-compose/.env.example docker-compose/.env
+
+    - name: Build Docker Compose stack
+      working-directory: docker-compose
+      run: docker compose -f docker-compose.yml build --quiet
+
+    - name: Run Docker Compose stack (detached)
+      working-directory: docker-compose
+      run: docker compose -f docker-compose.yml up -d
+
+    - name: Test containers are running
+      working-directory: docker-compose
+      run: docker compose -f docker-compose.yml ps
+
+    - name: Shutdown stack
+      if: always()
+      working-directory: docker-compose
+      run: docker compose -f docker-compose.yml down
