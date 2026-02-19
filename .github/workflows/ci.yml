@@ -25,28 +25,21 @@ jobs:
         with:
           python-version: "3.11"
 
-      # 3️⃣ Instalar docker-compose clásico
-      - name: Install docker-compose
-        run: |
-          sudo curl -L "https://github.com/docker/compose/releases/download/v2.21.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
-
-      # 4️⃣ Analizar scripts bash
+      # 3️⃣ Analizar scripts bash
       - name: Analizar scripts bash
         run: |
           echo "Analizando todos los scripts .sh..."
           find . -type f -name "*.sh" -exec bash -n {} \;
 
-      # 5️⃣ Construir servicios Docker Compose
+      # 4️⃣ Build de servicios Docker Compose
       - name: Build Docker Compose
-        run: docker-compose -f docker-compose/docker-compose.yml build --quiet
+        run: docker compose -f docker-compose/docker-compose.yml build --quiet
 
-      # 6️⃣ (Opcional) Ejecutar tests de la app
+      # 5️⃣ (Opcional) Ejecutar tests de la app
       - name: Run app tests (opcional)
         run: |
           if [ -f docker-compose/docker-compose.yml ]; then
-            docker-compose -f docker-compose/docker-compose.yml run --rm app pytest || echo "No hay tests"
+            docker compose -f docker-compose/docker-compose.yml run --rm app pytest || echo "No hay tests"
           else
             echo "No se encontró docker-compose.yml"
           fi
