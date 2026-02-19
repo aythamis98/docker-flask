@@ -1,6 +1,5 @@
 name: CI Develop
 
-# Triggers: push y pull_request sobre la rama develop
 on:
   push:
     branches:
@@ -19,27 +18,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Configurar Python (opcional, si tu app lo necesita)
+      # 2️⃣ Configurar Python (opcional)
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
-      # 3️⃣ Analizar scripts bash
+      # 3️⃣ Copiar variables de entorno
+      - name: Setup environment variables
+        run: |
+          if [ -f docker-compose/.env.example ]; then
+            cp docker-compose/.env.example docker-compose/.env
+            echo "Archivo .env creado desde .env.example"
+          else
+            echo "No existe .env.example, se omite"
+          fi
+
+      # 4️⃣ Analizar scripts bash
       - name: Analizar scripts bash
         run: |
           echo "Analizando todos los scripts .sh..."
           find . -type f -name "*.sh" -exec bash -n {} \;
 
-      # 4️⃣ Build de servicios Docker Compose
+      # 5️⃣ Build de servicios Docker Compose desde directorio correcto
       - name: Build Docker Compose
-        run: docker compose -f docker-compose/docker-compose.yml build --quiet
+        working-directory: ${{ github.workspace }}/docker-compose
+        run: docker compose -f docker-compose.yml build --quiet
 
-      # 5️⃣ (Opcional) Ejecutar tests de la app
+      # 6️⃣ (Opcional) Ejecutar tests de la app
       - name: Run app tests (opcional)
+        working-directory: ${{ github.workspace }}/docker-compose
         run: |
-          if [ -f docker-compose/docker-compose.yml ]; then
-            docker compose -f docker-compose/docker-compose.yml run --rm app pytest || echo "No hay tests"
+          if [ -f docker-compose.yml ]; then
+            docker compose run --rm app pytest || echo "No hay tests configurados"
           else
             echo "No se encontró docker-compose.yml"
           fi
